@@ -25,16 +25,21 @@ function dedupe(sources: Source[]): Source[] {
 }
 
 // Shared by research() and screen(): three narrow searches, one strict extraction, provenance enforced in code.
+type SearchResult = Awaited<ReturnType<Muse["searchText"]>>;
+
 export async function researchCore(ctx: string, lang: string, muse: Muse, onProgress: Progress): Promise<ResearchResult> {
   onProgress("Searching: alternatives and competitors");
-  const alt = muse.searchText(P.SEARCH_ALTERNATIVES(ctx));
-  const market = muse.searchText(P.SEARCH_MARKET(ctx));
+  // One failed search leaves a gap the report labels as unknown; it must not lose the whole stage.
+  const search = (prompt: string): Promise<SearchResult> => muse.searchText(prompt).catch(() => ({ text: "", sources: [] }));
+  const alt = search(P.SEARCH_ALTERNATIVES(ctx));
+  const market = search(P.SEARCH_MARKET(ctx));
   const altRes = await alt;
   const names = [...altRes.text.matchAll(/\*\*([^*\n]{2,40})\*\*/g)].slice(0, 5).map((m) => m[1]).join(", ");
   onProgress("Searching: funding, revenue and market data");
-  const [money, mkt] = await Promise.all([muse.searchText(P.SEARCH_MONEY(ctx, fence(names))), market]);
+  const [money, mkt] = await Promise.all([search(P.SEARCH_MONEY(ctx, fence(names))), market]);
 
-  const found = [altRes, money, mkt];
+  const found = [altRes, money, mkt].filter((r) => r.text);
+  if (!found.length) throw new Error("All web searches failed");
   const sources = dedupe(found.flatMap((r) => r.sources));
   onProgress("Structuring the evidence");
   const evidence = found.map((r, i) => `--- search ${i + 1} ---\n${r.text}`).join("\n");

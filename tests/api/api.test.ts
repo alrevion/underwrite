@@ -318,3 +318,14 @@ describe("batch size", () => {
     expect(r.status).toBe(409);
   });
 });
+
+describe("finish interview", () => {
+  it("ends the interview without calling the model or charging", async () => {
+    const { call, calls } = setup() as any;
+    const run = await (await call("/api/runs", { json: { idea: IDEA } })).json() as { id: string };
+    const before = calls.length;
+    const r = await (await call(`/api/runs/${run.id}/interview/finish`, { json: {} })).json() as { interview: { done: boolean } };
+    expect(r.interview.done).toBe(true);
+    expect(calls.length).toBe(before);
+  });
+});

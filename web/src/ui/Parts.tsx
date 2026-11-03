@@ -16,5 +16,5 @@ export function Loading({ text }: { text?: string }) {
 }
 
 export function Section({ title, kicker, children }: { title: string; kicker?: string; children: ReactNode }) {
-  return <section className="sec">{kicker && <span className="label">{kicker}</span>}<h2>{title}</h2><div style={{ marginTop: 12 }}>{children}</div></section>;
+  return <section className="sec"><h2>{title}</h2>{kicker && <p className="sec-sub">{kicker}</p>}<div className="sec-body">{children}</div></section>;
 }

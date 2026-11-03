@@ -12,13 +12,25 @@ export const Claim = z.object({
 });
 export type Claim = z.infer<typeof Claim>;
 
-export const InterviewTurn = z.object({
-  phase: z.enum(["founder", "problem", "product", "improvements"]),
+// Clarity about the idea, not proof it is good. What goes in rises until the gate opens (worker/ai/interview.ts).
+export const CLARITY = ["problem", "customer", "product", "money", "founder"] as const;
+export type ClarityDim = (typeof CLARITY)[number];
+const Dim = z.object({ score: z.number(), why: z.string() });
+export const InterviewReply = z.object({
+  clarity: z.object({ problem: Dim, customer: Dim, product: Dim, money: Dim, founder: Dim }),
   message: z.string(), // exactly one question, in the founder's language
+  closing: z.string(), // one sentence for the case the interview ends here
   suggestions: z.array(z.string()), // 0-4 tap-to-answer options
-  done: z.boolean(),
 });
-export type InterviewTurn = z.infer<typeof InterviewTurn>;
+export type InterviewReply = z.infer<typeof InterviewReply>;
+export type InterviewTurn = {
+  clarity: InterviewReply["clarity"];
+  overall: number; // 0..100, weighted by code
+  target: ClarityDim; // what the current question is about, chosen by code
+  message: string;
+  suggestions: string[];
+  done: boolean;
+};
 
 export const Concept = z.object({
   name: z.string(),
@@ -176,6 +188,7 @@ HTTP API (all JSON unless noted; a run id is an unguessable capability, there ar
 POST /api/runs {idea, lang?}                 -> Run with first interview turn. 429 over DAILY_RUN_LIMIT per IP per day.
 GET  /api/runs/:id                           -> Run
 POST /api/runs/:id/interview {answer}        -> Run
+POST /api/runs/:id/interview/finish          -> Run. The founder starts research now, whatever the clarity.
 POST /api/runs/:id/stages/:stage {country?}  -> NDJSON StageEvent stream. country only for legal.
 POST /api/transcribe (body: audio, Content-Type audio/*) -> {text}
 POST /api/batches {thesis}                   -> Batch

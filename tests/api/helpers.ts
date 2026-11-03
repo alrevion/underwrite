@@ -23,7 +23,7 @@ export function stubAi(delay = 0) {
   const calls: string[] = [];
   const step = async (name: string, v: unknown) => { calls.push(name); await sleep(delay); return v; };
   const ai = {
-    nextTurn: async (run: { transcript: unknown[] }) => step("nextTurn", { phase: "problem", message: "Q?", suggestions: [], done: run.transcript.length >= 3 }),
+    nextTurn: async (run: { transcript: unknown[] }) => step("nextTurn", { message: "Q?", suggestions: [], done: run.transcript.length >= 3 }),
     concept: (_r: unknown, _e: unknown, p: (s: string) => void) => { p("working"); return step("concept", { name: "X" }); },
     research: () => step("research", { competitors: [] }),
     report: () => step("report", { verdict: "hold" }),

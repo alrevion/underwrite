@@ -226,6 +226,22 @@ export function createApp(ai: Ai) {
     } finally { await unlock(c.env.DB, key, token); }
   });
 
+  // The founder may stop any time; the report labels whatever stayed unclear.
+  app.post("/api/runs/:id/interview/finish", small, async (c) => {
+    const id = c.req.param("id");
+    if (!uuid.safeParse(id).success) return c.json({ error: "Run not found" }, 404);
+    const key = `run:${id}`;
+    const token = await lock(c.env.DB, key, INTERVIEW_TTL);
+    if (!token) return c.json({ error: "Run is busy" }, 409);
+    try {
+      const run = await loadRun(c.env.DB, id);
+      if (!run?.interview) return c.json({ error: "Run not found" }, 404);
+      run.interview = { ...run.interview, done: true, suggestions: [] };
+      await saveRun(c.env.DB, run);
+      return c.json(run);
+    } finally { await unlock(c.env.DB, key, token); }
+  });
+
   app.post("/api/runs/:id/stages/:stage", small, async (c) => {
     const stage = c.req.param("stage") as Stage;
     const id = c.req.param("id");

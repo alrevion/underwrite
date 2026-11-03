@@ -15,7 +15,8 @@ export type Muse = {
   transcribe(bytes: Uint8Array | ArrayBuffer, contentType: string): Promise<string>;
 };
 
-const SEARCH_MS = 70_000, LLM_MS = 100_000, IMAGE_MS = 60_000;
+// Web search and long generations often take over a minute.
+const SEARCH_MS = 130_000, LLM_MS = 170_000, IMAGE_MS = 60_000;
 
 export function createMuse(env: AiEnv, doFetch: typeof fetch = fetch): Muse {
   const base = env.MUSE_BASE_URL.replace(/\/+$/, "");
@@ -33,6 +34,7 @@ export function createMuse(env: AiEnv, doFetch: typeof fetch = fetch): Muse {
         if (res.status !== 429 && res.status < 500) break; // 4xx other than 429 will not get better
       } catch (e) {
         lastErr = `Muse ${path} ${e instanceof Error ? e.message : "network error"}`;
+        if (e instanceof Error && e.name === "TimeoutError") break; // repeating a slow call only doubles the wait
       }
       await new Promise((r) => setTimeout(r, 800));
     }

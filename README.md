@@ -48,6 +48,10 @@ No key? Run the whole app against a local stand-in for the API: set `MODEL_API_K
 npm test
 ```
 
+## The method
+
+The model follows two skills kept as plain text in `skills/`: `deep-interview` for the interview, from [oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode), and `idea-to-delivery` for everything after it. `worker/ai/skills.ts` hands each stage the parts that belong to it. Edit the files to change the method.
+
 ## Architecture
 
 ```
@@ -64,4 +68,4 @@ Paid routes have per-IP and global daily limits. Run links are unguessable and t
 
 ## License
 
-MIT
+MIT. The design rules in the prototype prompt are adapted from [unslop](https://x.com/heydamir) by Damir Sokolovsky, CC BY 4.0.

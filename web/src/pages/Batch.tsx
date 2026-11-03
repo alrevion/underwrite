@@ -57,7 +57,7 @@ function AddForm({ id, onBatch }: { id: string; onBatch: (b: Batch) => void }) {
       <div><label className="l" htmlFor="pdf">{t.orPdf}</label>
         <input id="pdf" type="file" accept="application/pdf" onChange={(e) => setFile(e.target.files?.[0])} />
         {file && file.size > 6e6 && <p className="small" style={{ color: "var(--kill)" }}>{t.pdfBig}</p>}</div>
-      <button className="btn" disabled={!ok || busy}>{busy ? t.screening : t.screen}</button>
+      <button className={`btn${busy ? " busy" : ""}`} aria-busy={busy} disabled={!ok || busy}>{busy && <span className="spin" aria-hidden="true" />}{busy ? t.screening : t.screen}</button>
       {steps.length > 0 && <ol className="steps" aria-live="polite">{steps.map((s, i) => <li key={i} className={i === steps.length - 1 && busy ? "now" : "ok"}>{s}</li>)}</ol>}
       {err && <ErrorBox text={err} onRetry={ok ? run : undefined} />}
     </form>

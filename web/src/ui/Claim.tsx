@@ -3,7 +3,7 @@ import { host, safeUrl } from "../fmt";
 import { t } from "../i18n";
 
 export function Chip({ label }: { label: Claim["label"] }) {
-  return <span className={`chip ${label}`}>{t[label]}</span>;
+  return <span className={`chip ${label}`}><i className={`mk ${label}`} aria-hidden="true" />{t[label]}</span>;
 }
 
 export function Sources({ urls }: { urls: string[] }) {

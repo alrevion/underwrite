@@ -19,7 +19,7 @@ const byName: Record<string, (req: any) => unknown> = {
   interview_turn: (req) => {
     const text = JSON.stringify(req.messages ?? []);
     const answers = Number(/\((\d+) founder answers/.exec(text)?.[1] ?? 0); // the pipeline states the count in its prompt
-    return answers >= 3 ? f.interviewDone : { ...f.interviewQuestions[answers]!, done: false };
+    return answers >= 3 ? f.interviewDone : f.interviewQuestions[answers]!;
   },
   concept: () => f.concept,
   research: () => f.research,

@@ -1,6 +1,6 @@
 import type { Prototype, Run } from "../../shared/contract";
 import { createMuse, type AiEnv, type Muse, type Progress } from "./muse";
-import { PROTOTYPE, REPAIR, langLine } from "./prompts";
+import { DESIGN_FIX, HERO_IMAGE, PROTOTYPE, REPAIR, langLine } from "./prompts";
 import { runContext } from "./stages";
 
 const CSP = `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; font-src data:">`;
@@ -20,6 +20,25 @@ export function sanitize(raw: string): string {
   return `<!doctype html><html><head>${inject}</head><body>${html}</body></html>`;
 }
 
+// Signs of a generated look that code can see. The model does not get to judge its own taste.
+export function slopSigns(html: string): string[] {
+  const css = [...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi)].map((m) => m[1]).join("\n") + [...html.matchAll(/style=["']([^"']*)["']/gi)].map((m) => m[1]).join("\n");
+  const text = html.replace(/<style[\s\S]*?<\/style>/gi, " ").replace(/<!--[\s\S]*?-->/g, " ");
+  const checks: [boolean, string][] = [
+    [/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(text), "Emoji or pictographs used as icons: replace with inline SVG line icons or remove"],
+    [/(linear|radial|conic)-gradient/i.test(css), "CSS gradients: use flat surfaces from the neutral ramp"],
+    [/font-weight:\s*(700|800|900|bold)/i.test(css), "Font weights above 600: use 400 to 600"],
+    [/text-transform:\s*uppercase/i.test(css), "Uppercase labels: use sentence case without letter spacing"],
+    [/backdrop-filter|filter:\s*blur/i.test(css), "Glass or blur effects: use a plain surface and a hairline"],
+    [/animation[^;{}]*infinite/i.test(css), "Looping animation: remove it"],
+    [/transition:\s*all/i.test(css), "transition: all: name the properties"],
+    [/>\s*(good (morning|afternoon|evening)|welcome back|hi|hello)\b/i.test(text), "Greeting as a title: name the context instead"],
+    [/[a-zа-яё]!\s*</i.test(text), "Exclamation marks in the interface: use a plain statement"],
+    [/lorem ipsum/i.test(text), "Placeholder text: use realistic content"],
+  ];
+  return checks.filter(([bad]) => bad).map(([, why]) => why);
+}
+
 const screensOf = (html: string) => [...html.matchAll(/data-screen=["']([^"']+)["']/g)].map((m) => m[1]!);
 
 async function withRetry(gen: () => Promise<string>): Promise<string> {
@@ -28,8 +47,14 @@ async function withRetry(gen: () => Promise<string>): Promise<string> {
 
 export async function buildPrototype(brief: string, lang: string, muse: Muse, onProgress: Progress): Promise<Prototype> {
   onProgress("Building the clickable prototype");
-  const heroP = muse.image(`Clean modern product illustration for a mobile app hero banner, no text, soft colors. Product: ${brief.slice(0, 400)}`);
-  const html = await withRetry(() => muse.text(PROTOTYPE, `${langLine(lang)}\nProduct brief:\n${brief}`, "medium"));
+  const heroP = muse.image(HERO_IMAGE(brief));
+  let html = await withRetry(() => muse.text(PROTOTYPE, `${langLine(lang)}\nProduct brief:\n${brief}`, "medium"));
+  const signs = slopSigns(html);
+  if (signs.length) {
+    onProgress("Reviewing the design");
+    // One pass only. If it fails, the working prototype still stands.
+    html = await withRetry(() => muse.text(DESIGN_FIX, `Problems:\n- ${signs.join("\n- ")}\n\nHTML:\n${html}`, "medium")).catch(() => html);
+  }
   onProgress("Adding the hero image");
   const hero = await heroP;
   const final = html.split("{{HERO_IMAGE}}").join(hero ?? FALLBACK_IMG);

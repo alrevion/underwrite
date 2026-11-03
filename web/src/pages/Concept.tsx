@@ -1,8 +1,9 @@
 import type { Concept } from "../../../shared/contract";
 import { t } from "../i18n";
+import { Tagged } from "../ui/Tagged";
 import { Section } from "../ui/Parts";
 
-const List = ({ items }: { items: string[] }) => <ul className="bul">{items.map((x, i) => <li key={i}>{x}</li>)}</ul>;
+const List = ({ items }: { items: string[] }) => <ul className="plain tags">{items.map((x, i) => <li key={i}><Tagged text={x} /></li>)}</ul>;
 
 export function ConceptReview({ c, onGo }: { c: Concept; onGo: () => void }) {
   return (
@@ -11,18 +12,18 @@ export function ConceptReview({ c, onGo }: { c: Concept; onGo: () => void }) {
       <h1>{c.name}</h1>
       <p className="lede">{c.oneLiner}</p>
       <div className="cols">
-        <div className="card"><span className="label">{t.firstUser}</span><p>{c.firstUser}</p></div>
-        <div className="card"><span className="label">{t.job}</span><p>{c.job}</p></div>
+        <div className="card"><span className="label">{t.firstUser}</span><p><Tagged text={c.firstUser} /></p></div>
+        <div className="card"><span className="label">{t.job}</span><p><Tagged text={c.job} /></p></div>
       </div>
       <div className="cols">
         <div><h3>{t.pains}</h3><List items={c.pains} /></div>
         <div><h3>{t.gains}</h3><List items={c.gains} /></div>
       </div>
       <Section title={t.features}>
-        <ul className="plain">{c.features.map((f) => <li key={f.name}><b>{f.name}</b><br /><span className="muted">{f.why}</span></li>)}</ul>
+        <ul className="plain">{c.features.map((f) => <li key={f.name}><b>{f.name}</b><br /><span className="muted"><Tagged text={f.why} /></span></li>)}</ul>
       </Section>
       <Section title={t.improvements}>
-        <ul className="plain">{c.improvements.map((f) => <li key={f.name}>{f.reframing && <span className="chip estimate">{t.reframing}</span>} <b>{f.name}</b><br /><span className="muted">{f.why}</span></li>)}</ul>
+        <ul className="plain">{c.improvements.map((f) => <li key={f.name}>{f.reframing && <span className="chip estimate">{t.reframing}</span>} <b>{f.name}</b><br /><span className="muted"><Tagged text={f.why} /></span></li>)}</ul>
       </Section>
       <div className="cols sec">
         <div><h3>{t.outOfScope}</h3><List items={c.outOfScope} /></div>

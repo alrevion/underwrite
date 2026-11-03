@@ -12,7 +12,7 @@ export function Criteria({ items }: { items: ReportModel["criteria"] }) {
     <ul className="criteria">
       {items.map((c) => (
         <li key={c.id}>
-          <div className="crow"><b>{t.criteria[c.id]}</b><span className="small muted num">{t.weight} {RW[c.id]}{VW[c.id] ? ` · ${t.viability} ${VW[c.id]}` : ""}</span><span className={`rate ${c.rating}`}>{t[c.rating]}</span></div>
+          <div className="crow"><b>{t.criteria[c.id]}</b><span className="small muted num">{t.weight} {RW[c.id]}{VW[c.id] ? ` · ${t.viability} ${VW[c.id]}` : ""}</span><span className={`rate ${c.rating}`}><i className={`mk ${c.rating}`} aria-hidden="true" />{t[c.rating]}</span></div>
           <p className="small">{c.evidence}</p>
           {c.nextStep && <p className="small muted">→ {c.nextStep}</p>}
         </li>
@@ -21,34 +21,29 @@ export function Criteria({ items }: { items: ReportModel["criteria"] }) {
   );
 }
 
-function Step({ op, label, value, note }: { op?: string; label: string; value: string; note?: string }) {
-  return (
-    <div className="mstep">
-      {op && <span className="op" aria-hidden="true">{op}</span>}
-      <span className="label">{label}</span>
-      <span className="big num">{value}</span>
-      {note && <span className="small muted num">{note}</span>}
-    </div>
-  );
+export function LedgerRow({ op, label, value, kind }: { op?: string; label: string; value: string; kind?: "sum" | "last" }) {
+  return <div className={`lrow ${kind ?? ""}`}><span className="op" aria-hidden="true">{op}</span><span className="ll">{label}</span><span>{value}</span></div>;
 }
 
 export function MarketMath({ m }: { m: Market }) {
   return (
     <div>
-      <p className="small muted">{m.customerType} · {m.region} · {t.bottomUp}</p>
-      <div className="math" role="group" aria-label={t.marketMath}>
-        <Step label={t.customers} value={count(m.customers)} />
-        <Step op="×" label={t.pricePerYear} value={money(m.annualPriceUsd)} />
-        <Step op="=" label="TAM" value={money(m.tamUsd)} />
-        <Step op="×" label={t.reach} value={pct(m.reachableShare)} />
-        <Step op="=" label="SAM" value={money(m.samUsd)} />
-        <Step op="×" label={t.winRate} value={pct(m.winRate)} />
-        <Step op="=" label="SOM" value={money(m.somUsd)} />
-      </div>
-      <div className="stack" style={{ marginTop: 14 }}>
-        <ClaimView c={m.customersClaim} label={t.customers} />
-        <ClaimView c={m.priceClaim} label={t.pricePerYear} />
-        {m.drivers.map((d, i) => <ClaimView key={i} c={d} label={t.driver} />)}
+      <p className="small muted">{m.customerType}, {m.region}</p>
+      <div className="mgrid">
+        <div className="ledger" role="group" aria-label={t.marketMath}>
+          <LedgerRow label={t.customers} value={count(m.customers)} />
+          <LedgerRow op="×" label={t.pricePerYear} value={money(m.annualPriceUsd)} />
+          <LedgerRow op="=" label={t.tam} value={money(m.tamUsd)} kind="sum" />
+          <LedgerRow op="×" label={t.reach} value={pct(m.reachableShare)} />
+          <LedgerRow op="=" label={t.sam} value={money(m.samUsd)} kind="sum" />
+          <LedgerRow op="×" label={t.winRate} value={pct(m.winRate)} />
+          <LedgerRow op="=" label={t.som} value={money(m.somUsd)} kind="sum" />
+        </div>
+        <div className="stack">
+          <ClaimView c={m.customersClaim} label={t.customers} />
+          <ClaimView c={m.priceClaim} label={t.pricePerYear} />
+          {m.drivers.map((d, i) => <ClaimView key={i} c={d} label={t.driver} />)}
+        </div>
       </div>
     </div>
   );
@@ -61,7 +56,7 @@ export function Competitors({ items }: { items: Competitor[] }) {
       <tbody>
         {items.map((c, i) => (
           <tr key={i}>
-            <td data-l={t.competitor}><b>{c.name}</b><br /><span className="label">{t.kinds[c.kind]}</span><br /><span className="small muted">{c.whoItServes}</span></td>
+            <td data-l={t.competitor}><b>{c.name}</b><span className="kind">{t.kinds[c.kind]}</span><span className="small muted">{c.whoItServes}</span></td>
             <td data-l={t.pricing}><ClaimView c={c.pricing} /></td>
             <td data-l={t.revenue}><ClaimView c={c.revenue} /></td>
             <td data-l={t.funding}><ClaimView c={c.funding} /></td>

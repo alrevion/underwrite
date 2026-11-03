@@ -1,7 +1,7 @@
 // One worked idea: a Telegram bot that reminds patients of small dental clinics.
 // Shapes are the raw MODEL outputs (what the pipeline asks Muse for), typed loosely on purpose.
 // Plain .ts without runtime imports so `node --experimental-strip-types` can load it.
-import type { Concept, InterviewTurn, Legal, SystemDesign } from "../../shared/contract.ts";
+import type { Concept, InterviewReply, Legal, SystemDesign } from "../../shared/contract.ts";
 
 export const IDEA = "A Telegram bot that reminds patients of small dental clinics about appointments and asks them to confirm, so clinics lose fewer slots to no-shows.";
 
@@ -16,12 +16,17 @@ export const SEARCH_RESULTS = [
 const U = SEARCH_RESULTS.map((r) => r.url) as [string, string, string, string];
 const claim = (text: string, label: "fact" | "estimate" | "assumption", sources: string[], howToTest = "") => ({ text, label, sources, howToTest });
 
-export const interviewQuestions: Pick<InterviewTurn, "phase" | "message" | "suggestions">[] = [
-  { phase: "founder", message: "Who are you and why are you the right person to build this?", suggestions: ["I run a dental clinic", "I am a developer", "I worked in clinic software"] },
-  { phase: "problem", message: "How do clinics handle reminders today, and how many slots do they lose to no-shows?", suggestions: ["Receptionist calls", "SMS from a basic tool", "Nothing"] },
-  { phase: "product", message: "What must the first version do for a clinic to pay for it?", suggestions: ["Send reminders", "Let patients confirm or reschedule", "Fill cancelled slots"] },
+const scores = (n: number): InterviewReply["clarity"] => {
+  const d = (why: string) => ({ score: n, why });
+  return { problem: d("Reminders and no-shows are described"), customer: d("A small clinic's receptionist"), product: d("Telegram reminders with one-tap replies"), money: d("A monthly fee, untested"), founder: d("Nothing built yet") };
+};
+const closing = "Thanks, that is enough to start. I will build the concept now.";
+export const interviewQuestions: InterviewReply[] = [
+  { clarity: scores(30), closing, message: "Who are you and why are you the right person to build this?", suggestions: ["I run a dental clinic", "I am a developer", "I worked in clinic software"] },
+  { clarity: scores(50), closing, message: "How do clinics handle reminders today, and how many slots do they lose to no-shows?", suggestions: ["Receptionist calls", "SMS from a basic tool", "Nothing"] },
+  { clarity: scores(70), closing, message: "What must the first version do for a clinic to pay for it?", suggestions: ["Send reminders", "Let patients confirm or reschedule", "Fill cancelled slots"] },
 ];
-export const interviewDone = { phase: "improvements", message: "Thanks, that is enough to start. I will build the concept now.", suggestions: [], done: true } as const;
+export const interviewDone: InterviewReply = { clarity: scores(85), closing, message: "", suggestions: [] };
 
 export const concept: Concept = {
   name: "Dentacall",

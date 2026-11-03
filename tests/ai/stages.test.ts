@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { Muse } from "../../worker/ai/muse";
 import { prototype, repairPrototype, sanitize } from "../../worker/ai/prototype";
 import { nextTurn, report, research } from "../../worker/ai/index";
+import { MAX_ANSWERS } from "../../worker/ai/interview";
 import { Report, type Run } from "../../shared/contract";
 
 const env = { MODEL_API_KEY: "k", MUSE_BASE_URL: "http://x", MUSE_MODEL: "m", MUSE_IMAGE_MODEL: "i" };
@@ -61,16 +62,34 @@ describe("report", () => {
 });
 
 describe("nextTurn", () => {
-  it("forces done at 8 founder answers", async () => {
-    const transcript = Array.from({ length: 8 }, () => ({ role: "founder" as const, text: "a" }));
-    const json = async (_n: string, s: any) => s.parse({ phase: "product", message: "q", suggestions: ["a", "b", "c", "d", "e"], done: false });
-    const t = await nextTurn({ ...run, transcript }, env, stub({ json: json as any }));
-    expect(t.done).toBe(true);
-    expect(t.suggestions).toEqual([]);
+  const reply = (score: number) => {
+    const d = { score, why: "w" };
+    return { clarity: { problem: d, customer: d, product: d, money: d, founder: d }, message: "question", closing: "bye", suggestions: ["a", "b", "c", "d", "e"] };
+  };
+  const answers = (n: number) => Array.from({ length: n }, () => ({ role: "founder" as const, text: "a" }));
+  const turn = (score: number, n: number, interview?: any) =>
+    nextTurn({ ...run, transcript: answers(n), interview }, env, stub({ json: (async (_n: string, s: any) => s.parse(reply(score))) as any }));
+
+  it("keeps asking under the gate", async () => {
+    const t = await turn(79, 5);
+    expect([t.done, t.overall, t.message]).toEqual([false, 79, "question"]);
+    expect(t.suggestions).toHaveLength(4);
   });
-  it("caps suggestions at 4", async () => {
-    const json = async (_n: string, s: any) => s.parse({ phase: "founder", message: "q", suggestions: ["a", "b", "c", "d", "e"], done: false });
-    expect((await nextTurn(run, env, stub({ json: json as any }))).suggestions).toHaveLength(4);
+  it("opens the gate at 80 and closes instead of asking", async () => {
+    const t = await turn(80, 5);
+    expect([t.done, t.message, t.suggestions]).toEqual([true, "bye", []]);
+  });
+  it("needs at least two answers even for a detailed first message", async () => {
+    expect((await turn(95, 1)).done).toBe(false);
+    expect((await turn(95, 2)).done).toBe(true);
+  });
+  it("ends at the question limit whatever the clarity", async () => {
+    expect((await turn(10, MAX_ANSWERS)).done).toBe(true);
+  });
+  it("only lets clarity rise", async () => {
+    const before = await turn(60, 3);
+    const t = await turn(20, 4, before);
+    expect(t.overall).toBeGreaterThanOrEqual(60);
   });
 });
 
@@ -110,5 +129,20 @@ describe("prototype", () => {
     const p = await repairPrototype(doc, "boom", env, stub({ text: async () => doc }));
     expect(p.repaired).toBe(true);
     expect(p.html).toContain("Content-Security-Policy");
+  });
+});
+
+describe("research when searches fail", () => {
+  const sr = (fail: (p: string) => boolean) => async (p: string) => {
+    if (fail(p)) throw new Error("timeout");
+    return { text: "found", sources: [] };
+  };
+  const reached = async () => { throw new Error("reached extraction"); };
+  it("goes on with the searches that worked", async () => {
+    let n = 0;
+    await expect(research(run, env, () => {}, stub({ searchText: sr(() => n++ === 0), json: reached as any }))).rejects.toThrow("reached extraction");
+  });
+  it("fails only when every search failed", async () => {
+    await expect(research(run, env, () => {}, stub({ searchText: sr(() => true), json: reached as any }))).rejects.toThrow("All web searches failed");
   });
 });
