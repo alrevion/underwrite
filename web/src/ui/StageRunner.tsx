@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Run, Stage } from "../../../shared/contract";
-import { api, explain, streamStage } from "../api";
+import { api, ApiError, explain, streamStage } from "../api";
 import { t } from "../i18n";
 import { ErrorBox } from "./Parts";
 
@@ -20,7 +20,7 @@ export function StageRunner({ id, stage, country, onDone, title }: {
   const done = useRef(onDone);
   done.current = onDone;
 
-  const start = useCallback(async () => {
+  const start = useCallback(async (tries = 0) => {
     ctl.current?.abort();
     const c = new AbortController(); ctl.current = c;
     setSteps([]); setErr(undefined); setBusy(true);
@@ -33,6 +33,8 @@ export function StageRunner({ id, stage, country, onDone, title }: {
       }, c.signal);
     } catch (e) {
       if (c.signal.aborted) return;
+      // After a reload the old request may still hold the step for a few seconds: wait instead of showing an error.
+      if (e instanceof ApiError && e.status === 409 && tries < 30) { setTimeout(() => { if (!c.signal.aborted) void start(tries + 1); }, 5000); return; }
       message = explain(e);
     }
     if (c.signal.aborted || finished) return;
@@ -52,7 +54,7 @@ export function StageRunner({ id, stage, country, onDone, title }: {
         {steps.map((s, i) => <li key={i} className={i === steps.length - 1 && busy ? "now" : "ok"}>{s}</li>)}
         {busy && !steps.length && <li className="now">{t.starting}</li>}
       </ol>
-      {err && <ErrorBox text={err} onRetry={start} />}
+      {err && <ErrorBox text={err} onRetry={() => void start()} />}
     </div>
   );
 }
