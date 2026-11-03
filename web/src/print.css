@@ -1,0 +1,11 @@
+@media print {
+  :root { --bg: #fff; --surface: #fff; --ink: #000; --muted: #444; --rule: #bbb; --sunk: #f2f2f2; }
+  body { background: #fff; font-size: 11pt; }
+  .noprint, .tabs, .top, button { display: none !important; }
+  .shell { max-width: none; padding: 0; }
+  .md { max-width: none; }
+  a { color: #000; text-decoration: underline; }
+  .md a[href]::after { content: " (" attr(href) ")"; font-size: .8em; word-break: break-all; }
+  h2, h3 { break-after: avoid; } table, tr, pre, .card { break-inside: avoid; }
+  .device { box-shadow: none; }
+}

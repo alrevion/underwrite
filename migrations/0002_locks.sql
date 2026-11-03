@@ -1,0 +1,1 @@
+CREATE TABLE locks (key TEXT PRIMARY KEY, expires INTEGER NOT NULL);
