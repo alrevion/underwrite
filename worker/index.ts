@@ -158,7 +158,7 @@ export function createApp(ai: Ai) {
     if ("err" in body) return c.json({ error: body.err }, 400);
     const ch = await charge(c, true);
     if (ch instanceof Response) return ch;
-    const run: Run = { id: crypto.randomUUID(), createdAt: Date.now(), idea: body.data.idea, lang: body.data.lang ?? "en", transcript: [] };
+    const run: Run = { id: crypto.randomUUID(), createdAt: Date.now(), idea: body.data.idea, lang: "auto", transcript: [] };
     try {
       run.interview = await ai.nextTurn(run, c.env as never);
     } catch (e) {

@@ -5,7 +5,7 @@ import {
 import { createMuse, type AiEnv, type Muse, type Progress, type Source } from "./muse";
 import * as P from "./prompts";
 import { fence } from "./prompts";
-import { capByEvidence, enforce, marketMath, normUrl, readiness, stripUnverifiedLinks, verdictGuard, viability } from "./provenance";
+import { capByEvidence, enforce, marketMath, normUrl, plainCriteria, plainText, readiness, stripUnverifiedLinks, verdictGuard, viability } from "./provenance";
 
 const none: Progress = () => {};
 const J = (x: unknown) => JSON.stringify(x);
@@ -67,15 +67,19 @@ const LEGEND = `\n\n---\n**Labels.** **fact**: a cited source states it. **estim
 export async function report(run: Run, env: AiEnv, onProgress: Progress = none, muse: Muse = createMuse(env)): Promise<ReportResult> {
   onProgress("Writing the verdict");
   const r = run.research;
-  const user = `${P.langLine(run.lang)}\n${runContext(run)}\nResearch data (the only URLs you may cite are in sources): ${fence(J(r ?? "none"))}`;
+  const user = `${P.langLine(run.lang)}\n${runContext(run)}\nResearch data (the only URLs you may cite appear in its claims): ${fence(J(r ? { ...r, sources: undefined } : "none"))}`;
   const m = await muse.json("report", Report, P.REPORT, user, "high");
-  const sources = (r?.sources ?? []).map((s) => `- [${s.title.replace(/[\[\]]/g, "")}](${s.url})`).join("\n");
-  const criteria = capByEvidence(m.criteria, r);
+  const doc = stripUnverifiedLinks(m.fullDocument, (r?.sources ?? []).map((x) => x.url));
+  const cited = new Set([...doc.matchAll(/\]\((https?:[^)\s]+)\)/g)].map((x) => normUrl(x[1]!)));
+  const sources = (r?.sources ?? []).filter((s) => cited.has(normUrl(s.url))).map((s) => `- [${s.title.replace(/[\[\]]/g, "")}](${s.url})`).join("\n");
+  const criteria = plainCriteria(capByEvidence(m.criteria, r));
   return {
     ...m,
+    headline: plainText(m.headline),
+    verdictWhy: plainText(m.verdictWhy),
     criteria,
     verdict: verdictGuard(m.verdict, criteria),
-    fullDocument: stripUnverifiedLinks(m.fullDocument, (r?.sources ?? []).map((x) => x.url)) + LEGEND + (sources ? `\n\n## Sources\n${sources}` : ""),
+    fullDocument: doc + LEGEND + (sources ? `\n\n## Sources\n${sources}` : ""),
     readiness: readiness(criteria),
     viability: viability(criteria),
   };

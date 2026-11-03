@@ -42,7 +42,7 @@ describe("research", () => {
 
 describe("report", () => {
   const rep = (verdict: string, problem: string) => ({
-    verdict, verdictWhy: "w", headline: "h", risks: [], nextTests: [], fullDocument: "# Doc",
+    verdict, verdictWhy: "w", headline: "h", risks: [], nextTests: [], fullDocument: "# Doc [A](https://a.com)",
     criteria: [{ id: "problem", rating: problem, evidence: "e", nextStep: "n" }],
   });
   it("guards go without problem evidence, appends legend and sources, computes scores", async () => {
@@ -50,7 +50,7 @@ describe("report", () => {
     const r = await report({ ...run, research: { sources: [{ url: "https://a.com", title: "A" }] } as any }, env, () => {}, stub({ json: json as any }));
     expect(r.verdict).toBe("hold");
     expect(r.fullDocument).toMatch(/\*\*Labels\.\*\*/);
-    expect(r.fullDocument).toContain("[A](https://a.com)");
+    expect(r.fullDocument).toMatch(/## Sources\n- \[A\]\(https:\/\/a.com\)/);
     expect(r.readiness).toBe(0);
     expect(Report.shape.verdict.options).toContain("kill");
   });
@@ -61,8 +61,8 @@ describe("report", () => {
 });
 
 describe("nextTurn", () => {
-  it("forces done at 12 founder answers", async () => {
-    const transcript = Array.from({ length: 12 }, () => ({ role: "founder" as const, text: "a" }));
+  it("forces done at 8 founder answers", async () => {
+    const transcript = Array.from({ length: 8 }, () => ({ role: "founder" as const, text: "a" }));
     const json = async (_n: string, s: any) => s.parse({ phase: "product", message: "q", suggestions: ["a", "b", "c", "d", "e"], done: false });
     const t = await nextTurn({ ...run, transcript }, env, stub({ json: json as any }));
     expect(t.done).toBe(true);

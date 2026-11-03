@@ -1,6 +1,6 @@
 // The method, as prompts. Every prompt shares RULES; stage prompts add only what is specific.
 export const langLine = (lang: string) =>
-  !lang || lang === "auto" ? "Answer in the language the founder writes in." : `Answer in this language: ${lang}.`;
+  !lang || lang === "auto" ? "Write all human-readable text in the language of the founder's first message (the idea), whatever the language of these instructions or of the sources. Keep JSON keys and enum values as specified." : `Answer in this language: ${lang}.`;
 
 // Wrap untrusted text; any tag-like "untrusted" inside is neutralised so it cannot close the fence.
 export const fence = (t: string) => `<untrusted>${t.replace(/<\s*(\/?)\s*untrusted/gi, "&lt;$1untrusted")}</untrusted>`;
@@ -19,7 +19,8 @@ Rules for questions:
 - If an answer is vague, a compliment, or full of adjectives ("fast", "easy", "many"), pressure-test it: ask for an example, a number or a name.
 - Never pitch, never suggest the founder's answer inside the question.
 - "suggestions": 0 to 4 short tap-to-answer options in the founder's language, only when the answer space is small; otherwise [].
-- Set done=true when you can write the concept (a named first user, the situation, the job, the current alternative, a first test) or when the founder has given 12 answers. When done, "message" is a one-sentence closing line and suggestions is [].`;
+- Follow the current phase given in the message. Never repeat a question or its topic. If the founder does not know, declines or says there is nothing to add, accept it, treat it as an open gap for the report and move on to something else. Never demand names of other people or private details.
+- Set done=true when you can write the concept (a first user, the situation, the job, the current alternative, a first test). When done, "message" is a one-sentence closing line and suggestions is [].`;
 
 export const CONCEPT = `${RULES}
 Turn the interview into one bounded concept. Pick ONE first user (a real type of person, not "everyone"), one situation, one outcome.
@@ -34,13 +35,13 @@ For each give name, URL, who it serves, pricing and its main weakness. Cite sour
 Idea:\n${ctx}`;
 export const SEARCH_MONEY = (ctx: string, names: string) => `Search the web now. For each of these competitors (or, if the list is empty, the 3 best-known ones for the idea) find: annual revenue or user count, total funding raised and latest round with date, founding year. Use only figures a source states; otherwise write "Not found" for that figure.
 Competitors: ${names || "(identify them yourself)"}\nIdea:\n${ctx}`;
-export const SEARCH_MARKET = (ctx: string) => `Search the web now. Find data for a bottom-up market size: how many potential customers of the first user type exist in the target region (count of businesses, schools, clinics, freelancers, households: name the statistic and year), and what they pay today per year for the alternatives. Cite sources. If no figure exists write "Not found".
+export const SEARCH_MARKET = (ctx: string) => `Search the web now. Find data for a bottom-up market size: how many potential customers of this type exist in the region the product could realistically serve within three years: the whole country and neighbouring markets with the same language, not only the first city (count of businesses, schools, clinics, freelancers, households: name the statistic and year), and what they pay today per year for the alternatives. Cite sources. If no figure exists write "Not found".
 Idea:\n${ctx}`;
 
 export const EXTRACT_RESEARCH = `${RULES}
 You are given search findings inside <untrusted> tags and a list of URLs the search really returned. Build the research record.
 - A claim may be labelled fact only if you cite at least one URL from that list; copy URLs exactly. No source -> estimate or assumption. For unknown revenue/funding use label assumption with text "Not found".
-- market.customers and market.annualPriceUsd are numbers from sources or your clearly flagged estimate; reachableShare is the fraction you can reach in year one (0..1), winRate the fraction of those you can win (0..1). State the reasoning in drivers. Do NOT compute TAM/SAM/SOM; code does it.
+- market.customers and market.annualPriceUsd are numbers from sources or your clearly flagged estimate; customers covers the region reachable within three years (the country and same-language neighbours), not only the launch city; name the launch-city count in a driver. reachableShare is the fraction your channel can reach within three years (0..1), winRate the fraction of those you can realistically win (0..1). State the reasoning in drivers. Do NOT compute TAM/SAM/SOM; code does it.
 - competitors: include status_quo entries (what people do today). positioning: one sentence versus alternatives. gaps: things no alternative does, which refine the product.
 - url may be "" if unknown. If the evidence is thin, say so in the claims rather than filling the gap.`;
 
@@ -48,8 +49,10 @@ export const REPORT = `${RULES}
 You are an investor-minded analyst writing the verdict on an idea. Killing a weak idea is a good outcome: it saves the founder time. Verdict meanings: go (evidence supports building the next step), hold (promising but a critical unknown is open), recycle (the problem is real but the segment or solution should change), kill (stop).
 - Rate all 12 criteria: strong only with cited evidence, weak when partial, missing when nothing is known. No flattery.
 - headline: the one sentence the founder must hear, even if unpleasant.
+- All fields except fullDocument are plain text: no Markdown, no links, no bold.
+- An interview gap is an open question to test, not proof against the founder: judge the idea and market on the evidence, and say what is unknown.
 - risks: mark critical ones. nextTests: cheapest first, with a pass/fail threshold, cost in USD and days.
-- fullDocument: Markdown report for the founder. Cite sources as [name](url) links; use only URLs from the research data. Mark each important statement with its label in bold (**fact**, **estimate**, **assumption**). Do not add a label legend or a sources list; the system appends them.`;
+- fullDocument: Markdown report for the founder, at most about 1200 words. Cite sources as [name](url) links; use only URLs that appear in the research claims. Mark each important statement with its label in bold (**fact**, **estimate**, **assumption**). Do not add a label legend or a sources list; the system appends them.`;
 
 export const SYSTEM = `${RULES}
 Design the system for the concept's first version, small enough for one developer and a few weeks.

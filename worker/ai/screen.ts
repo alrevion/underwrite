@@ -3,7 +3,7 @@ import { Screening, type Claim, type ScreeningResult } from "../../shared/contra
 import { createMuse, type AiEnv, type Muse, type Progress } from "./muse";
 import { buildPrototype } from "./prototype";
 import { READ_APPLICATION, SCREEN, fence, langLine } from "./prompts";
-import { capByEvidence, enforce, readiness, verdictGuard } from "./provenance";
+import { capByEvidence, enforce, plainCriteria, readiness, verdictGuard } from "./provenance";
 import { researchCore } from "./stages";
 
 const AppRead = z.object({
@@ -30,7 +30,7 @@ export async function screen(
   const user = `${langLine(lang)}\nInvestor thesis:\n${fence(thesis)}\nApplication read-out: ${fence(JSON.stringify(read))}\nResearch: ${fence(JSON.stringify(research))}`;
   const m = await muse.json("screening", Screening, SCREEN, user, "high");
 
-  const criteria = capByEvidence(m.criteria, research);
+  const criteria = plainCriteria(capByEvidence(m.criteria, research));
   const known = research.sources.map((s) => s.url);
   const redFlags: Claim[] = m.redFlags.map((c) => enforce(c, known).claim);
   const result: ScreeningResult = {

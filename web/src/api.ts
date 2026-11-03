@@ -31,7 +31,7 @@ const post = <T>(path: string, body: unknown) =>
   json<T>(path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
 
 export const api = {
-  createRun: (idea: string) => post<Run>("/api/runs", { idea, lang: navigator.language.slice(0, 2) }),
+  createRun: (idea: string) => post<Run>("/api/runs", { idea }),
   getRun: (id: string) => json<Run>(`/api/runs/${id}`),
   answer: (id: string, answer: string) => post<Run>(`/api/runs/${id}/interview`, { answer }),
   repair: (id: string, error: string) => post<Run>(`/api/runs/${id}/prototype/repair`, { error }),
