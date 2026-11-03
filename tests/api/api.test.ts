@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { finishedRun, IDEA, ndjson, setup, sleep } from "./helpers";
-import { ipKey } from "../../worker/index";
+import { ipKey, MAX_BATCH_ITEMS } from "../../worker/index";
 import { cleanupDaily, lock, unlock } from "../../worker/db";
 
 describe("health and headers", () => {
@@ -305,5 +305,16 @@ describe("locks and cleanup", () => {
     expect(await usage(env, "%2020-01-01")).toBe(0);
     expect(await usage(env, "%2999-01-01")).toBe(5);
     expect(await env.DB.prepare("SELECT key FROM locks WHERE key = 'old'").first()).toBeNull();
+  });
+});
+
+describe("batch size", () => {
+  it("refuses an application over the row-size cap without charging", async () => {
+    const { call, env } = setup();
+    const made = await (await call("/api/batches", { json: { thesis: "A thesis long enough" } })).json() as { id: string; thesis: string; createdAt: number };
+    const items = Array.from({ length: MAX_BATCH_ITEMS }, (_, i) => ({ id: String(i) }));
+    await env.DB.prepare("UPDATE batches SET data = ?2 WHERE id = ?1").bind(made.id, JSON.stringify({ ...made, items })).run();
+    const r = await call(`/api/batches/${made.id}/screen`, { json: { name: "X", text: "An application text" } });
+    expect(r.status).toBe(409);
   });
 });

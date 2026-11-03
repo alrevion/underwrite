@@ -56,6 +56,7 @@ export function ipKey(raw: string | undefined): string {
   return groups.slice(0, 4).map((g) => g.replace(/^0+(?=.)/, "")).join(":") + "::/64";
 }
 
+export const MAX_BATCH_ITEMS = 4;
 type Ctx = Context<{ Bindings: Env }>;
 type Charge = { refund(): Promise<void> };
 
@@ -345,6 +346,8 @@ export function createApp(ai: Ai) {
     if (!uuid.safeParse(id).success) return c.json({ error: "Batch not found" }, 404);
     const batch = await loadBatch(c.env.DB, id);
     if (!batch) return c.json({ error: "Batch not found" }, 404);
+    // ponytail: a batch is one row, capped at 2 MB, and a screening with its prototype is about 400 KB. Split items into rows to lift this.
+    if (batch.items.length >= MAX_BATCH_ITEMS) return c.json({ error: `A batch holds ${MAX_BATCH_ITEMS} applications. Start a new batch for more.` }, 409);
     const ch = await charge(c, true);
     if (ch instanceof Response) return ch;
     return stream(c, async (progress, st) => {
@@ -363,4 +366,4 @@ export function createApp(ai: Ai) {
   return app;
 }
 
-export default createApp(realAi);
+export const app = createApp(realAi);

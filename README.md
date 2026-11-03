@@ -39,7 +39,6 @@ Requires Node 22 or later and a key from [dev.meta.ai](https://dev.meta.ai).
 ```bash
 npm install
 cp .dev.vars.example .dev.vars   # add MODEL_API_KEY
-npx wrangler d1 migrations apply underwrite --local
 npm run dev
 ```
 
@@ -53,7 +52,7 @@ npm test
 
 ```
 web/            React app (landing, interview, report, prototype, funds)
-worker/         Cloudflare Worker: routes, limits, D1 storage, NDJSON streaming
+worker/         Cloudflare Worker: routes, limits, SQLite storage, NDJSON streaming
 worker/ai/      Prompts, stages and provenance.ts (the rules the model cannot override)
 shared/         The contract between all three, as zod schemas
 tests/          Unit and API tests, plus a fake Muse server
