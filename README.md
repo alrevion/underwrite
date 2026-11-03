@@ -4,7 +4,7 @@ Startup due diligence that is allowed to say "don't build this".
 
 A founder describes an idea. Underwrite interviews them, researches the market on the live web, and returns a verdict in which every number shows where it came from, then a system design, a clickable prototype and legal first steps. Funds and studios use the same engine to screen a batch of applications against their thesis.
 
-Built on Meta's models for the Meta Global AI Developer Hackathon.
+Built on Meta's models for the Meta Global AI Developer Hackathon. Live: https://underwrite.dsfddff31.workers.dev
 
 ## Why it is different
 

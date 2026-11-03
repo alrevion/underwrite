@@ -84,7 +84,8 @@ export function stripUnverifiedLinks(md: string, sources: string[]): string {
 
 // Summary fields are shown as plain text; the model sometimes adds Markdown anyway.
 export const plainText = (t: string) =>
-  t.replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1").replace(/\*\*|__|`/g, "").replace(/\s+/g, " ").trim();
+  t.replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1").replace(/\*\*|__|`/g, "")
+    .replace(/\[(fact|estimate|assumption)\]\s*|\b(fact|estimate|assumption):\s*/gi, "").replace(/\s+/g, " ").trim();
 
 // The criteria, without Markdown in what the summary prints.
 export const plainCriteria = <T extends { evidence: string; nextStep: string }>(c: T[]): T[] =>

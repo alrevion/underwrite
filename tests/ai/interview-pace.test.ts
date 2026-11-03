@@ -12,4 +12,7 @@ describe("plainText", () => {
   it("removes bold and links but keeps the words", () => {
     expect(plainText("**fact** see [Frontline](https://x.com/a)  now")).toBe("fact see Frontline now");
   });
+  it("drops label prefixes the model adds, since chips show the label", () => {
+    expect(plainText("fact: 8 tutors. [assumption] No demand. Assumption: none")).toBe("8 tutors. No demand. none");
+  });
 });

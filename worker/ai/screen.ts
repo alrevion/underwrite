@@ -3,7 +3,7 @@ import { Screening, type Claim, type ScreeningResult } from "../../shared/contra
 import { createMuse, type AiEnv, type Muse, type Progress } from "./muse";
 import { buildPrototype } from "./prototype";
 import { READ_APPLICATION, SCREEN, fence, langLine } from "./prompts";
-import { capByEvidence, enforce, plainCriteria, readiness, verdictGuard } from "./provenance";
+import { capByEvidence, enforce, plainCriteria, plainText, readiness, verdictGuard } from "./provenance";
 import { researchCore } from "./stages";
 
 const AppRead = z.object({
@@ -32,9 +32,9 @@ export async function screen(
 
   const criteria = plainCriteria(capByEvidence(m.criteria, research));
   const known = research.sources.map((s) => s.url);
-  const redFlags: Claim[] = m.redFlags.map((c) => enforce(c, known).claim);
+  const redFlags: Claim[] = m.redFlags.map((c) => enforce({ ...c, text: plainText(c.text) }, known).claim);
   const result: ScreeningResult = {
-    ...m, criteria, redFlags, hasPrototype: read.hasPrototype,
+    ...m, summary: plainText(m.summary), thesisWhy: plainText(m.thesisWhy), criteria, redFlags, hasPrototype: read.hasPrototype,
     verdict: verdictGuard(m.verdict, criteria),
     id: crypto.randomUUID(),
     readiness: readiness(criteria),

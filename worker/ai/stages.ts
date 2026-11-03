@@ -100,5 +100,5 @@ export async function legal(run: Run, country: string, env: AiEnv, onProgress: P
   const l = await muse.json("legal", Legal, P.LEGAL, user, "medium");
   const known = new Set(urls.map(normUrl));
   const ok = (u: string) => !u || known.has(normUrl(u));
-  return { ...l, entitySteps: l.entitySteps.map((e) => ({ ...e, source: ok(e.source) ? e.source : "" })), country };
+  return { ...l, jurisdictionAdvice: plainText(l.jurisdictionAdvice), equityAdvice: plainText(l.equityAdvice), entitySteps: l.entitySteps.map((e) => ({ ...e, source: ok(e.source) ? e.source : "" })), country };
 }
